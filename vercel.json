@@ -1,6 +1,5 @@
 json{
   "rewrites": [
-    { "source": "/api/generate", "destination": "/api/generate.js" },
-    { "source": "/(.*)", "destination": "/public/$1" }
+    { "source": "/api/generate", "destination": "/api/generate.js" }
   ]
 }
