@@ -1,0 +1,9 @@
+{
+  "name": "milestones-analyzer",
+  "version": "3.0.0",
+  "description": "Milestones EOG Analyzer — Integrated Method Diagnostic Tool",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}

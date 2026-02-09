@@ -71,4 +71,4 @@ Each diagnostic report costs approximately $0.01–0.02 in API usage (Claude Son
 
 *The Integrated Method: Building Writers, Not Better Drafts*
 
-Fannin County Middle School# milestones-analyzer-app
+Fannin County Middle School
