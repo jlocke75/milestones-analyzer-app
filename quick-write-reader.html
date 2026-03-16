@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Write Reader</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+      padding: 16px;
+      color: #1f2937;
+    }
+
+    .container { max-width: 680px; margin: 0 auto; }
+
+    .header-bar {
+      background: #1e1b4b;
+      color: white;
+      padding: 24px 28px;
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .header-bar h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-bar .subtitle { font-size: 13px; color: #a5b4fc; margin-top: 4px; }
+    .header-nav a {
+      color: #a5b4fc;
+      font-size: 13px;
+      text-decoration: none;
+      border: 1px solid #4338ca;
+      padding: 6px 14px;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+    .header-nav a:hover { background: #4338ca; color: white; }
+
+    .card {
+      background: white;
+      padding: 28px;
+      border-radius: 0 0 12px 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #6366f1;
+      margin-bottom: 10px;
+    }
+
+    .form-section { margin-bottom: 22px; }
+
+    /* CLUSTER GRID */
+    .cluster-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .cluster-btn {
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 10px 8px;
+      cursor: pointer;
+      text-align: center;
+      background: white;
+      transition: all 0.15s;
+    }
+    .cluster-btn:hover { background: #f3f4f6; }
+    .cluster-btn.selected {
+      border: 2px solid #4338ca;
+      background: #eef2ff;
+    }
+    .cluster-letter {
+      font-size: 18px;
+      font-weight: 700;
+      display: block;
+      color: #1e1b4b;
+    }
+    .cluster-btn.selected .cluster-letter { color: #4338ca; }
+    .cluster-name {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 2px;
+      display: block;
+    }
+    .cluster-btn.selected .cluster-name { color: #4338ca; }
+
+    /* FLAGS */
+    .flag-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .flag-btn {
+      padding: 5px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+    .flag-btn.vs  { background: #d97706; color: white; }
+    .flag-btn.ts  { background: #2563eb; color: white; }
+    .flag-btn.avp { background: #7c3aed; color: white; }
+    .flag-btn.fa  { background: #dc2626; color: white; }
+
+    /* TEXTAREA */
+    textarea {
+      width: 100%;
+      height: 200px;
+      padding: 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 13px;
+      line-height: 1.6;
+      resize: vertical;
+      color: #1f2937;
+    }
+    textarea:focus { outline: none; border-color: #6366f1; }
+
+    /* BUTTONS */
+    .btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary { background: #4338ca; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #3730a3; }
+    .btn-primary:disabled { background: #c7d2fe; cursor: not-allowed; }
+    .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .btn-generate { width: 100%; padding: 14px; font-size: 15px; font-weight: 700; }
+
+    /* LOADING */
+    .loading { padding: 48px 24px; text-align: center; }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #e5e7eb;
+      border-top: 3px solid #4338ca;
+      border-radius: 50%;
+      margin: 0 auto;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading p { margin-top: 16px; color: #6b7280; font-size: 14px; }
+
+    /* RESULT CARD */
+    .result-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+      margin-top: 16px;
+    }
+    .result-header {
+      background: #1e1b4b;
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .result-header h2 { font-size: 16px; font-weight: 600; }
+    .result-header .meta { font-size: 12px; color: #a5b4fc; margin-top: 2px; }
+
+    .badge-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .badge {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .badge-gray   { background: #f3f4f6; color: #6b7280; }
+    .badge-teal   { background: #d1fae5; color: #065f46; }
+    .badge-purple { background: #ede9fe; color: #5b21b6; }
+    .badge-amber  { background: #fef3c7; color: #92400e; }
+
+    .result-body { padding: 20px 24px; }
+    .result-body p { font-size: 14px; line-height: 1.75; color: #1f2937; white-space: pre-wrap; }
+
+    .result-divider { border: none; border-top: 1px solid #e5e7eb; margin: 16px 0; }
+
+    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+
+    .error-box {
+      padding: 14px 18px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #991b1b;
+      margin-top: 12px;
+    }
+
+    .footer { text-align: center; color: #9ca3af; font-size: 11px; margin-top: 16px; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <a href="index.html" class="btn btn-secondary" style="font-size:13px;padding:8px 16px;font-weight:500;text-decoration:none;">← Analyzer</a>
+    <div></div>
+  </div>
+
+  <!-- MAIN CARD -->
+  <div>
+    <div class="header-bar">
+      <div>
+        <h1>Quick Write Reader</h1>
+        <div class="subtitle">Student-facing feedback · Integrated Method</div>
+      </div>
+    </div>
+
+    <div class="card">
+
+      <!-- CLUSTER -->
+      <div class="form-section">
+        <div class="section-label">Feedback Cluster</div>
+        <div class="cluster-grid">
+          <button class="cluster-btn" data-cluster="A" onclick="selectCluster(this)">
+            <span class="cluster-letter">A</span>
+            <span class="cluster-name">High-Support</span>
+          </button>
+          <button class="cluster-btn" data-cluster="B" onclick="selectCluster(this)">
+            <span class="cluster-letter">B</span>
+            <span class="cluster-name">Independent</span>
+          </button>
+          <button class="cluster-btn" data-cluster="C" onclick="selectCluster(this)">
+            <span class="cluster-letter">C</span>
+            <span class="cluster-name">Directive</span>
+          </button>
+          <button class="cluster-btn" data-cluster="D" onclick="selectCluster(this)">
+            <span class="cluster-letter">D</span>
+            <span class="cluster-name">Example-Driven</span>
+          </button>
+          <button class="cluster-btn" data-cluster="E" onclick="selectCluster(this)">
+            <span class="cluster-letter">E</span>
+            <span class="cluster-name">Rule-Based</span>
+          </button>
+          <button class="cluster-btn" data-cluster="F" onclick="selectCluster(this)">
+            <span class="cluster-letter">F</span>
+            <span class="cluster-name">Socratic</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- FLAGS -->
+      <div class="form-section">
+        <div class="section-label">Modifier Flags (optional)</div>
+        <div class="flag-row">
+          <button class="flag-btn" data-flag="VS" onclick="toggleFlag(this)">VS — Volume-Sensitive</button>
+          <button class="flag-btn" data-flag="TS" onclick="toggleFlag(this)">TS — Tone-Sensitive</button>
+          <button class="flag-btn" data-flag="AVP" onclick="toggleFlag(this)">AVP — Anti-Vague-Praise</button>
+          <button class="flag-btn" data-flag="FA" onclick="toggleFlag(this)">FA — Feedback-Averse</button>
+        </div>
+      </div>
+
+      <!-- WRITING INPUT -->
+      <div class="form-section">
+        <div class="section-label">Student Writing</div>
+        <textarea id="writing-input" placeholder="Paste the student's quick write here..." oninput="checkReady()"></textarea>
+      </div>
+
+      <!-- SUBMIT -->
+      <button class="btn btn-primary btn-generate" id="submit-btn" onclick="generateFeedback()" disabled>
+        Generate Feedback
+      </button>
+
+      <div class="error-box hidden" id="error-box"></div>
+
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="hidden" id="loading-section">
+    <div class="result-card">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Reading the writing...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="hidden" id="result-section">
+    <div class="result-card">
+      <div class="result-header">
+        <div>
+          <h2>Feedback</h2>
+          <div class="meta" id="result-meta"></div>
+        </div>
+        <button class="btn btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="resetForm()">Start Over</button>
+      </div>
+      <div class="result-body">
+        <div class="badge-row" id="badge-row"></div>
+        <hr class="result-divider">
+        <p id="feedback-text"></p>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer">Integrated Method · Building Writers, Not Better Drafts</p>
+</div>
+
+<script>
+const API_PROXY_URL = '/api/generate';
+
+let selectedCluster = null;
+let activeFlags = [];
+
+const CLUSTER_INSTRUCTIONS = {
+  A: "Lead with one specific, genuine praise. Then give ONE teaching point only — show what the fix looks like by modeling it. End with encouragement. Warm, supportive tone throughout.",
+  B: "Skip empty praise. Be direct and specific. Name exactly what needs to change and trust the student to do it. Crisp, efficient, respectful.",
+  C: "Give feedback as numbered steps the student can follow. Concrete, sequential, procedural. Tell them exactly what to do in order.",
+  D: "Show rather than tell. Give a brief model sentence or example of what the writing could look like, then connect it to their own words. Let the example do the teaching.",
+  E: "Name the writing rule or principle first. Then explain why it matters. Then show how it applies to their specific writing. Principle then reason then application.",
+  F: "Ask 2-3 focused questions that guide the student toward discovering what needs to change. After each question, give a brief hint (1 sentence) so the student is not left stuck. Do not answer the questions for them."
+};
+
+const FLAG_INSTRUCTIONS = {
+  VS:  "Give feedback on no more than 2 things total, even if more issues exist.",
+  TS:  "Use soft, growth-focused language. Frame everything as here is how to grow, not here is what is wrong.",
+  AVP: "Be specific with any praise or skip it entirely. No phrases like great job or good work without explaining exactly what is good.",
+  FA:  "Keep feedback brief. One point only. Acknowledge before correcting."
+};
+
+function selectCluster(btn) {
+  document.querySelectorAll('.cluster-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedCluster = btn.dataset.cluster;
+  checkReady();
+}
+
+function toggleFlag(btn) {
+  const flag = btn.dataset.flag;
+  const idx = activeFlags.indexOf(flag);
+  if (idx >= 0) {
+    activeFlags.splice(idx, 1);
+    btn.className = 'flag-btn';
+  } else {
+    activeFlags.push(flag);
+    btn.className = 'flag-btn ' + flag.toLowerCase();
+  }
+}
+
+function checkReady() {
+  const hasCluster = selectedCluster !== null;
+  const hasText = document.getElementById('writing-input').value.trim().length > 20;
+  document.getElementById('submit-btn').disabled = !(hasCluster && hasText);
+}
+
+function resetForm() {
+  selectedCluster = null;
+  activeFlags = [];
+  document.querySelectorAll('.cluster-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.flag-btn').forEach(b => b.className = 'flag-btn');
+  document.getElementById('writing-input').value = '';
+  document.getElementById('submit-btn').disabled = true;
+  document.getElementById('result-section').classList.add('hidden');
+  document.getElementById('error-box').classList.add('hidden');
+  checkReady();
+}
+
+function buildPrompt(writing) {
+  const flagNotes = activeFlags.map(f => FLAG_INSTRUCTIONS[f]).filter(Boolean).join(' ');
+
+  return `You are a writing feedback tool for middle school students. You read student writing and give feedback the student can read and act on right now.
+
+READING LEVEL: Write all feedback at a 4th grade reading level. Short sentences. Simple words. No jargon. Nothing a 10-year-old could not understand.
+
+STEP 1 — Infer three things from the writing:
+1. WRITE TYPE: Narrative (story or moment), Expository (explaining), or Argumentative (claiming and defending)?
+2. ORGANIZATIONAL PROFILE:
+   - List: Facts exist alone, no connections between them
+   - Sequential: Organized by time (first, then, next) but no because or so
+   - Categorical: Grouped into reasons or categories but reasons do not connect
+   - Connective: Shows cause-effect chains, uses because and which means
+3. GEORGIA STANDARD: Pick the most relevant:
+   - 6.T.SS.1.c (connecting ideas, transitions)
+   - 6.T.SS.1.d (organized structure with intro and conclusion)
+   - 6.T.T.3.a (claim + evidence + counterclaim)
+   - 6.L.GC.2.b (sentence variety)
+   - K-12.P.EICC.4 (writing process, drafting, revising)
+
+STEP 2 — Give feedback.
+Cluster ${selectedCluster}: ${CLUSTER_INSTRUCTIONS[selectedCluster]}
+${flagNotes ? 'FLAG MODIFICATIONS: ' + flagNotes : ''}
+
+FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
+WRITE TYPE: [type]
+PROFILE: [profile]
+STANDARD: [standard]
+---
+[Student-facing feedback at 4th grade reading level]
+
+Student writing:
+
+${writing}`;
+}
+
+async function generateFeedback() {
+  const writing = document.getElementById('writing-input').value.trim();
+  if (!writing || !selectedCluster) return;
+
+  document.getElementById('submit-btn').disabled = true;
+  document.getElementById('error-box').classList.add('hidden');
+  document.getElementById('result-section').classList.add('hidden');
+  document.getElementById('loading-section').classList.remove('hidden');
+
+  try {
+    const response = await fetch(API_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: buildPrompt(writing) }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || 'Server error ' + response.status);
+    }
+
+    const data = await response.json();
+    const text = data.content.filter(c => c.type === 'text').map(c => c.text).join('');
+    renderResult(text);
+
+  } catch (err) {
+    document.getElementById('loading-section').classList.add('hidden');
+    document.getElementById('submit-btn').disabled = false;
+    const box = document.getElementById('error-box');
+    box.textContent = 'Something went wrong: ' + err.message;
+    box.classList.remove('hidden');
+  }
+}
+
+function renderResult(text) {
+  document.getElementById('loading-section').classList.add('hidden');
+
+  const lines = text.split('\n');
+  let writeType = '', profile = '', standard = '';
+  let feedbackLines = [];
+  let pastDivider = false;
+
+  for (const line of lines) {
+    if (line.startsWith('WRITE TYPE:')) writeType = line.replace('WRITE TYPE:', '').trim();
+    else if (line.startsWith('PROFILE:'))   profile   = line.replace('PROFILE:', '').trim();
+    else if (line.startsWith('STANDARD:'))  standard  = line.replace('STANDARD:', '').trim();
+    else if (line.trim() === '---')         pastDivider = true;
+    else if (pastDivider)                   feedbackLines.push(line);
+  }
+
+  const feedback = feedbackLines.join('\n').trim();
+
+  // Badges
+  const badgeRow = document.getElementById('badge-row');
+  badgeRow.innerHTML = '';
+  if (writeType) badgeRow.innerHTML += `<span class="badge badge-gray">${writeType}</span>`;
+  if (profile)   badgeRow.innerHTML += `<span class="badge badge-teal">${profile} thinker</span>`;
+  if (standard)  badgeRow.innerHTML += `<span class="badge badge-purple">${standard}</span>`;
+  badgeRow.innerHTML += `<span class="badge badge-gray">Cluster ${selectedCluster}</span>`;
+  activeFlags.forEach(f => {
+    badgeRow.innerHTML += `<span class="badge badge-amber">${f}</span>`;
+  });
+
+  // Meta line
+  document.getElementById('result-meta').textContent =
+    [writeType, profile ? profile + ' thinker' : '', standard].filter(Boolean).join(' · ');
+
+  document.getElementById('feedback-text').textContent = feedback;
+  document.getElementById('result-section').classList.remove('hidden');
+  document.getElementById('submit-btn').disabled = false;
+}
+</script>
+</body>
+</html>
